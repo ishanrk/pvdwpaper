@@ -62,7 +62,7 @@ struct Solver {
         if (left == 0) return true;
         int v = choose_vertex();
         unsigned forbidden = neighbor_color_mask[v];
-        int top = min(3, max_used+1); // existing colors plus at most one new color
+        int top = min(3, max_used+1);
         for (int c=0; c<=top; ++c) if (!(forbidden & (1u<<c))) {
             bool is_new = (c == max_used+1);
             bool ok = assign(v,c);
@@ -80,23 +80,16 @@ static void add_edge(vector<vector<int>>& g, int a, int b) {
 
 static int grid_id(int x, int y, int Y) { return x*(Y+1)+y; }
 
-vector<vector<int>> build_grid_graph_even(int X=10, int Y=64) {
-    vector<pair<int,int>> pts;
-    vector<vector<int>> id(X+1, vector<int>(Y+1,-1));
-    for (int x=0; x<=X; ++x)
-        for (int y=0; y<=Y; ++y)
-            if (((x+y)&1)==0) {
-                id[x][y]=(int)pts.size();
-                pts.push_back({x,y});
-            }
-    vector<vector<int>> g(pts.size());
+vector<vector<int>> build_grid_graph(int X=10, int Y=64) {
+    vector<vector<int>> g((X+1)*(Y+1));
     for (int d=1; d<=X && d*d<=Y; ++d) {
         for (int x=0; x+d<=X; ++x) {
-            for (int y=0; y<=Y; ++y) if (id[x][y]>=0) {
-                if (y+d*d<=Y && id[x+d][y+d*d]>=0)
-                    add_edge(g,id[x][y],id[x+d][y+d*d]);
-                if (y-d*d>=0 && id[x+d][y-d*d]>=0)
-                    add_edge(g,id[x][y],id[x+d][y-d*d]);
+            for (int y=0; y<=Y; ++y) {
+                int a = grid_id(x,y,Y);
+                if (y+d*d<=Y)
+                    add_edge(g,a,grid_id(x+d,y+d*d,Y));
+                if (y-d*d>=0)
+                    add_edge(g,a,grid_id(x+d,y-d*d,Y));
             }
         }
     }
@@ -105,7 +98,6 @@ vector<vector<int>> build_grid_graph_even(int X=10, int Y=64) {
 
 vector<vector<int>> build_polynomial_graph(int a, int b, int N) {
     set<int> distances;
-    // For the small instances checked here, |d| <= N is far more than sufficient.
     for (int d=-N; d<=N; ++d) if (d != 0) {
         long long v = 1LL*a*d*d + 1LL*b*d;
         if (v < 0) v = -v;
@@ -124,7 +116,8 @@ bool verify_unsat(vector<vector<int>> g, const string& name) {
     Solver s(move(g));
     bool sat = s.dfs(-1, s.n);
     cout << name << ": vertices=" << s.n << " edges=" << twice_edges/2
-         << " result=" << (sat ? "SAT" : "UNSAT") << "\n";
+         << " result=" << (sat ? "SAT" : "UNSAT")
+         << " nodes=" << s.nodes << "\n";
     return !sat;
 }
 
@@ -139,7 +132,7 @@ int main(int argc, char** argv) {
     }
 
     if (mode == "grid" || mode == "all")
-        ok &= verify_unsat(build_grid_graph_even(), "Q_even[0..10]x[0..64]");
+        ok &= verify_unsat(build_grid_graph(), "Q=[0..10]x[0..64]");
 
     if (!ok) {
         cerr << "At least one required UNSAT claim failed.\n";
