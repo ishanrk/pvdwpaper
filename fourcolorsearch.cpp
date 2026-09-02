@@ -116,8 +116,7 @@ bool verify_unsat(vector<vector<int>> g, const string& name) {
     Solver s(move(g));
     bool sat = s.dfs(-1, s.n);
     cout << name << ": vertices=" << s.n << " edges=" << twice_edges/2
-         << " result=" << (sat ? "SAT" : "UNSAT")
-         << " nodes=" << s.nodes << "\n";
+         << " result=" << (sat ? "SAT" : "UNSAT") << "\n";
     return !sat;
 }
 
@@ -132,7 +131,7 @@ int main(int argc, char** argv) {
     }
 
     if (mode == "grid" || mode == "all")
-        ok &= verify_unsat(build_grid_graph(), "Q=[0..10]x[0..64]");
+        ok &= verify_unsat(build_grid_graph(), "Q[0..10]x[0..64]");
 
     if (!ok) {
         cerr << "At least one required UNSAT claim failed.\n";
